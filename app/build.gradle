@@ -17,6 +17,8 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+
+        buildConfigField "String","imgurClientId", "${project.property("imgur.clientId")}"
     }
 
     buildTypes {
