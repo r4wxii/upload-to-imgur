@@ -9,3 +9,7 @@ buildscript {
         classpath(libs.kotlin.gradlePlugin)
     }
 }
+
+plugins {
+    alias(libs.plugins.hilt) apply false
+}
