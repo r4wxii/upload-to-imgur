@@ -23,38 +23,28 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import coil.compose.AsyncImage
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun MainScreen() {
     val viewModel = hiltViewModel<MainViewModel>()
+    val state = rememberMainState(viewModel.requiresToken)
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val requiresTokenFlow = remember(lifecycleOwner) {
-        viewModel.requiresToken.flowWithLifecycle(
-            lifecycleOwner.lifecycle,
-            Lifecycle.State.STARTED,
-        )
-    }
-    val (requiresToken, setRequiresToken) = remember {
-        mutableStateOf(true)
-    }
+    MainScreenContent(state)
+}
 
-    LaunchedEffect(lifecycleOwner) {
-        requiresTokenFlow.collect(setRequiresToken)
-    }
-
-    val (imageUri, setImageUri) = remember {
-        mutableStateOf<Uri?>(null)
-    }
+@Composable
+private fun MainScreenContent(state: MainState) {
     val launcher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent(),
-            onResult = setImageUri,
+            onResult = state.setImageUri,
         )
 
-    val context = LocalContext.current
 
-    if (requiresToken) {
+    if (state.requiresToken) {
+        val context = LocalContext.current
+
         AlertDialog(
             onDismissRequest = { },
             properties = DialogProperties(
@@ -102,8 +92,43 @@ fun MainScreen() {
                     launcher.launch("image/*")
                 },
         )
-        imageUri?.let {
-            AsyncImage(model = imageUri, contentDescription = "", modifier = mod)
+        state.imageUri?.let { uri ->
+            AsyncImage(model = uri, contentDescription = "", modifier = mod)
         }
+    }
+}
+
+private data class MainState(
+    val requiresToken: Boolean,
+    val imageUri: Uri?,
+    val setImageUri: (Uri?) -> Unit,
+)
+
+@Composable
+private fun rememberMainState(
+    requiresTokenFlow: Flow<Boolean>,
+): MainState {
+    val (requiresToken, setRequiresToken) = remember {
+        mutableStateOf(true)
+    }
+
+    val (imageUri, setImageUri) = remember {
+        mutableStateOf<Uri?>(null)
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val requiresAuthFlow = remember(lifecycleOwner) {
+        requiresTokenFlow.flowWithLifecycle(
+            lifecycleOwner.lifecycle,
+            Lifecycle.State.STARTED,
+        )
+    }
+
+    LaunchedEffect(lifecycleOwner) {
+        requiresAuthFlow.collect(setRequiresToken)
+    }
+
+    return remember(requiresToken, imageUri) {
+        MainState(requiresToken = requiresToken, imageUri = imageUri, setImageUri)
     }
 }
