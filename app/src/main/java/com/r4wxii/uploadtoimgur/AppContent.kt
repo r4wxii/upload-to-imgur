@@ -21,11 +21,7 @@ fun AppContent() {
     NavHost(navController = navController, startDestination = "root") {
         navigation(route = "root", startDestination = "main")
         {
-            composable("main") { backStackEntry ->
-                val rootEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("root")
-                }
-                val viewModel = hiltViewModel<MainViewModel>(rootEntry)
+            composable("main") {
                 MainScreen()
             }
             composable(
@@ -38,10 +34,7 @@ fun AppContent() {
                     navArgument("query") { nullable = true },
                 ),
             ) { backStackEntry ->
-                val rootEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("root")
-                }
-                val viewModel = hiltViewModel<MainViewModel>(rootEntry)
+                val viewModel = hiltViewModel<MainViewModel>()
                 val query = backStackEntry.arguments?.getString("query")
                 val lifecycleOwner = LocalLifecycleOwner.current
                 val requiresTokenFlow = remember(lifecycleOwner) {
